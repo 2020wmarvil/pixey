@@ -1,0 +1,38 @@
+# Build directories
+build/
+build-*/
+out/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.sln.docstates
+*.vcxproj.filters.user
+
+# JetBrains / other IDEs
+.idea/
+.cache/
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Compiled artifacts
+*.obj
+*.lib
+*.exe
+*.pdb
+*.exp
+*.ilk

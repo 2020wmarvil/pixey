@@ -1,0 +1,83 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# --- Indentation ------------------------------------------------------------
+UseTab: ForIndentation
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
+AccessModifierOffset: -4
+NamespaceIndentation: All
+
+# --- Columns and braces -----------------------------------------------------
+ColumnLimit: 120
+BreakBeforeBraces: Allman
+
+# --- Pointer / reference / qualifier alignment ------------------------------
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+QualifierAlignment: Leading
+
+# --- Single-statement bodies always get braces ------------------------------
+InsertBraces: true
+
+# --- Short-form collapse ----------------------------------------------------
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: false
+
+# --- Argument / parameter packing -------------------------------------------
+AlignAfterOpenBracket: Align
+BinPackArguments: false
+BinPackParameters: false
+
+# --- Constructor initializers -----------------------------------------------
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: NextLine
+
+# --- Spaces -----------------------------------------------------------------
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# --- Empty lines and access modifiers ---------------------------------------
+EmptyLineBeforeAccessModifier: LogicalBlock
+MaxEmptyLinesToKeep: 1
+
+# --- Other ------------------------------------------------------------------
+Cpp11BracedListStyle: false
+Standard: c++20
+FixNamespaceComments: true
+
+# --- Include ordering (4 groups, Google-style) ------------------------------
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup
+IncludeIsMainRegex: '$'
+IncludeCategories:
+  - Regex:           '^"Pixey/'
+    Priority:        2
+  - Regex:           '^<SDL3/'
+    Priority:        3
+  - Regex:           '^<vulkan/'
+    Priority:        3
+  - Regex:           '^<glm/'
+    Priority:        3
+  - Regex:           '^<VkBootstrap'
+    Priority:        3
+  - Regex:           '^<vk_mem_alloc'
+    Priority:        3
+  - Regex:           '^<stb'
+    Priority:        3
+  - Regex:           '^<.*\.h>'
+    Priority:        4
+  - Regex:           '^<.*>'
+    Priority:        4
