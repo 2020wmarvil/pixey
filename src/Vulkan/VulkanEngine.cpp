@@ -3,80 +3,40 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
-#include <chrono>
-#include <thread>
-
 #include "VulkanInitializers.h"
 #include "VulkanTypes.h"
+#include "Window.h"
 
-constexpr bool bUseValidationLayers = false;
+#include <cassert>
 
-VulkanEngine* loadedEngine = nullptr;
-
-VulkanEngine& VulkanEngine::Get()
+namespace Pixey
 {
-	return *loadedEngine;
-}
+	constexpr bool bUseValidationLayers = false;
 
-void VulkanEngine::Initialize()
-{
-	// Only one engine initialization is allowed with the application.
-	assert(loadedEngine == nullptr);
-	loadedEngine = this;
-
-	// We initialize SDL and create a window with it.
-	SDL_Init(SDL_INIT_VIDEO);
-
-	SDL_WindowFlags windowFlags = SDL_WINDOW_VULKAN;
-
-	window = SDL_CreateWindow("Pixey", windowExtent.width, windowExtent.height, windowFlags);
-
-	bInitialized = true;
-}
-
-void VulkanEngine::Shutdown()
-{
-	if (bInitialized)
+	VulkanEngine& VulkanEngine::Get()
 	{
-		SDL_DestroyWindow(window);
+		static VulkanEngine instance;
+		return instance;
 	}
 
-	loadedEngine = nullptr;
-}
-
-void VulkanEngine::Run()
-{
-	SDL_Event e;
-	bool bQuit = false;
-
-	while (!bQuit)
+	void VulkanEngine::Initialize(Window* inWindow)
 	{
-		while (SDL_PollEvent(&e) != 0)
-		{
-			if (e.type == SDL_EVENT_QUIT)
-			{
-				bQuit = true;
-			}
-			else if (e.type == SDL_EVENT_WINDOW_MINIMIZED)
-			{
-				bStopRendering = true;
-			}
-			else if (e.type == SDL_EVENT_WINDOW_RESTORED)
-			{
-				bStopRendering = false;
-			}
-		}
+		assert(!bInitialized);
 
-		// do not draw if we are minimized
-		if (bStopRendering)
-		{
-			// throttle the speed to avoid the endless spinning
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			continue;
-		}
+		window = inWindow;
 
-		Draw();
+		int width = 0;
+		int height = 0;
+		SDL_GetWindowSizeInPixels(window->GetHandle(), &width, &height);
+		windowExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+
+		bInitialized = true;
 	}
-}
 
-void VulkanEngine::Draw() {}
+	void VulkanEngine::Shutdown()
+	{
+		bInitialized = false;
+	}
+
+	void VulkanEngine::Draw() {}
+}

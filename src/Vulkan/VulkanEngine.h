@@ -2,20 +2,32 @@
 
 #include "Vulkan/VulkanTypes.h"
 
-class VulkanEngine
+namespace Pixey
 {
-public:
-	static VulkanEngine& Get();
+	class Window;
 
-	void Initialize();
-	void Shutdown();
-	void Run();
-	void Draw();
+	class VulkanEngine
+	{
+	public:
+		static VulkanEngine& Get();
 
-	struct SDL_Window* window = nullptr;
-	VkExtent2D windowExtent = { 1700, 900 };
+		VulkanEngine(const VulkanEngine&) = delete;
+		VulkanEngine& operator=(const VulkanEngine&) = delete;
 
-	bool bInitialized = false;
-	bool bStopRendering = false;
-	int frameNumber = 0;
-};
+		void Initialize(Window* inWindow);
+		void Shutdown();
+		void Draw();
+
+	private:
+		VulkanEngine() = default;
+
+	private:
+		// Non-owning -- caller must keep the window alive for as long as the
+		// engine stays initialized.
+		Window* window = nullptr;
+		VkExtent2D windowExtent = {};
+
+		bool bInitialized = false;
+		int frameNumber = 0;
+	};
+}

@@ -1,11 +1,13 @@
 #include "Pixey/EntryPoint.h"
 
-class Sample : public Pixey::App
+class PixeySample : public Pixey::App
 {
 public:
+	const char* GetWindowTitle() const override { return "Pixey Sample"; }
+
 	void OnInit() override {}
 	void OnFrame(float deltaTime) override { (void)deltaTime; }
 	void OnShutdown() override {}
 };
 
-PIXEY_RUN(Sample)
+PIXEY_RUN(PixeySample)
