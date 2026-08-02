@@ -13,11 +13,11 @@ namespace Pixey
 
 	struct Color
 	{
-		float R, G, B, A;
+		float r, g, b, a;
 	};
 
 	struct Rect
 	{
-		float X, Y, W, H;
+		float x, y, w, h;
 	};
 }

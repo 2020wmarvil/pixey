@@ -1,12 +1,23 @@
 #include "Pixey/App.h"
 
+#include "Vulkan/VulkanEngine.h"
+
 namespace Pixey
 {
-	int RunApp(App& InApp, int /*Argc*/, char* /*Argv*/[])
+	int RunApp(App& inApp, int /*argc*/, char* /*argv*/[])
 	{
-		InApp.OnInit();
+
+		VulkanEngine engine;
+		engine.Initialize();
+		engine.Run();
+		engine.Shutdown();
+
+
+
+
+		inApp.OnInit();
 		// TODO: open SDL window, init Vulkan, run frame loop.
-		InApp.OnShutdown();
+		inApp.OnShutdown();
 		return 0;
 	}
 }

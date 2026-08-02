@@ -52,8 +52,20 @@ add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE deps/stb)
 
 # ---- Pixey static library --------------------------------------------------
+# src/ is globbed (CONFIGURE_DEPENDS) so new .h/.cpp files build without
+# touching this file. include/Pixey stays explicit -- it's the small,
+# stable public API surface.
+file(GLOB_RECURSE PIXEY_SOURCES CONFIGURE_DEPENDS
+	src/*.h
+	src/*.cpp
+)
+
 add_library(pixey STATIC
-	src/App.cpp
+	${PIXEY_SOURCES}
+	include/Pixey/App.h
+	include/Pixey/EntryPoint.h
+	include/Pixey/Pixey.h
+	include/Pixey/Types.h
 )
 
 target_include_directories(pixey

@@ -19,7 +19,7 @@ BreakBeforeBraces: Allman
 PointerAlignment: Left
 ReferenceAlignment: Left
 DerivePointerAlignment: false
-QualifierAlignment: Leading
+QualifierAlignment: Left
 
 # --- Single-statement bodies always get braces ------------------------------
 InsertBraces: true

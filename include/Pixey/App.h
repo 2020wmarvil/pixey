@@ -8,9 +8,9 @@ namespace Pixey
 		virtual ~App() = default;
 
 		virtual void OnInit() {}
-		virtual void OnFrame(float DeltaTime) { (void)DeltaTime; }
+		virtual void OnFrame(float deltaTime) { (void)deltaTime; }
 		virtual void OnShutdown() {}
 	};
 
-	int RunApp(App& InApp, int Argc, char* Argv[]);
+	int RunApp(App& inApp, int argc, char* argv[]);
 }

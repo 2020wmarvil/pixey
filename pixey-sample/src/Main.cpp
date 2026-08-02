@@ -4,7 +4,7 @@ class Sample : public Pixey::App
 {
 public:
 	void OnInit() override {}
-	void OnFrame(float DeltaTime) override { (void)DeltaTime; }
+	void OnFrame(float deltaTime) override { (void)deltaTime; }
 	void OnShutdown() override {}
 };
 

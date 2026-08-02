@@ -7,8 +7,8 @@
 #include <SDL3/SDL_main.h>
 
 #define PIXEY_RUN(ClassName)                              \
-	int main(int Argc, char* Argv[])                      \
+	int main(int argc, char* argv[])                      \
 	{                                                     \
-		ClassName Game;                                   \
-		return ::Pixey::RunApp(Game, Argc, Argv);         \
+		ClassName game;                                   \
+		return ::Pixey::RunApp(game, argc, argv);         \
 	}
