@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Window.h"
+#include "Pixey/Window.h"
 
 #include <SDL3/SDL.h>
 
@@ -9,7 +9,6 @@
 
 namespace Pixey
 {
-	// Owns the SDL video subsystem (SDL_Init/SDL_Quit) and every Window it opens.
 	class WindowManager
 	{
 	public:
@@ -24,6 +23,7 @@ namespace Pixey
 		Window& OpenWindow(const char* title, int width, int height);
 
 		void HandleEvent(const SDL_Event& event);
+		bool AreAllWindowsMinimized() const;
 
 	private:
 		WindowManager() = default;

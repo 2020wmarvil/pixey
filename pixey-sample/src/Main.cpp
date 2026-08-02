@@ -3,9 +3,11 @@
 class PixeySample : public Pixey::App
 {
 public:
-	const char* GetWindowTitle() const override { return "Pixey Sample"; }
+	void OnInit() override
+	{
+		Pixey::WindowManager::Get().OpenWindow("Pixey Sample", 1920, 1080);
+	}
 
-	void OnInit() override {}
 	void OnFrame(float deltaTime) override { (void)deltaTime; }
 	void OnShutdown() override {}
 };

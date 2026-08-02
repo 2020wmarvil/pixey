@@ -3,9 +3,9 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
+#include "Pixey/Window.h"
 #include "VulkanInitializers.h"
 #include "VulkanTypes.h"
-#include "Window.h"
 
 #include <cassert>
 
@@ -19,11 +19,11 @@ namespace Pixey
 		return instance;
 	}
 
-	void VulkanRenderer::Initialize(Window* inWindow)
+	void VulkanRenderer::RegisterWindow(Window& inWindow)
 	{
 		assert(!bInitialized);
 
-		window = inWindow;
+		window = &inWindow;
 
 		int width = 0;
 		int height = 0;

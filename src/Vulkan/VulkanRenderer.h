@@ -14,7 +14,7 @@ namespace Pixey
 		VulkanRenderer(const VulkanRenderer&) = delete;
 		VulkanRenderer& operator=(const VulkanRenderer&) = delete;
 
-		void Initialize(Window* inWindow);
+		void RegisterWindow(Window& inWindow);
 		void Shutdown();
 		void Draw();
 

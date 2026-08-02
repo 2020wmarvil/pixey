@@ -1,4 +1,6 @@
-#include "WindowManager.h"
+#include "Pixey/WindowManager.h"
+
+#include "Vulkan/VulkanRenderer.h"
 
 #include <SDL3/SDL.h>
 
@@ -34,7 +36,11 @@ namespace Pixey
 	Window& WindowManager::OpenWindow(const char* title, int width, int height)
 	{
 		windows.emplace_back(new Window(title, width, height));
-		return *windows.back();
+		Window& window = *windows.back();
+
+		VulkanRenderer::Get().RegisterWindow(window);
+
+		return window;
 	}
 
 	void WindowManager::HandleEvent(const SDL_Event& event)
@@ -52,5 +58,23 @@ namespace Pixey
 				break;
 			}
 		}
+	}
+
+	bool WindowManager::AreAllWindowsMinimized() const
+	{
+		if (windows.empty())
+		{
+			return false;
+		}
+
+		for (const std::unique_ptr<Window>& window : windows)
+		{
+			if (!window->IsMinimized())
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

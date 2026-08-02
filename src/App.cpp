@@ -1,8 +1,8 @@
 #include "Pixey/App.h"
 
 #include "Input.h"
+#include "Pixey/WindowManager.h"
 #include "Vulkan/VulkanRenderer.h"
-#include "WindowManager.h"
 
 #include <SDL3/SDL.h>
 
@@ -13,13 +13,10 @@ namespace Pixey
 		WindowManager& windowManager = WindowManager::Get();
 		windowManager.Initialize();
 
-		Window& window = windowManager.OpenWindow(inApp.GetWindowTitle(), inApp.GetWindowWidth(), inApp.GetWindowHeight());
-
-		VulkanRenderer& renderer = VulkanRenderer::Get();
-		renderer.Initialize(&window);
-
 		Input input;
 		inApp.OnInit();
+
+		VulkanRenderer& renderer = VulkanRenderer::Get();
 
 		bool bQuit = false;
 		Uint64 lastTicks = SDL_GetTicks();
@@ -39,7 +36,7 @@ namespace Pixey
 
 			input.Update();
 
-			if (window.IsMinimized())
+			if (windowManager.AreAllWindowsMinimized())
 			{
 				// throttle the speed to avoid the endless spinning
 				SDL_Delay(100);

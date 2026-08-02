@@ -66,6 +66,8 @@ add_library(pixey STATIC
 	include/Pixey/EntryPoint.h
 	include/Pixey/Pixey.h
 	include/Pixey/Types.h
+	include/Pixey/Window.h
+	include/Pixey/WindowManager.h
 )
 
 target_include_directories(pixey
