@@ -1,6 +1,6 @@
 #include "Pixey/App.h"
 
-#include "Input.h"
+#include "Pixey/Input.h"
 #include "Pixey/WindowManager.h"
 #include "Vulkan/VulkanRenderer.h"
 
@@ -13,7 +13,7 @@ namespace Pixey
 		WindowManager& windowManager = WindowManager::Get();
 		windowManager.Initialize();
 
-		Input input;
+		Input& input = Input::Get();
 		inApp.OnInit();
 
 		VulkanRenderer& renderer = VulkanRenderer::Get();
@@ -49,6 +49,11 @@ namespace Pixey
 
 			inApp.OnFrame(deltaTime);
 			renderer.Draw();
+
+			if (inApp.WantsToQuit())
+			{
+				bQuit = true;
+			}
 		}
 
 		inApp.OnShutdown();

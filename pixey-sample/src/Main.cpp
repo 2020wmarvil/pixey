@@ -8,7 +8,15 @@ public:
 		Pixey::WindowManager::Get().OpenWindow("Pixey Sample", 1920, 1080);
 	}
 
-	void OnFrame(float deltaTime) override { (void)deltaTime; }
+	void OnFrame(float deltaTime) override
+	{
+		(void)deltaTime;
+
+		if (Pixey::Input::Get().IsKeyPressed(SDL_SCANCODE_ESCAPE))
+		{
+			Quit();
+		}
+	}
 	void OnShutdown() override {}
 };
 

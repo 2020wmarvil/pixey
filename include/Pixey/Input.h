@@ -9,6 +9,11 @@ namespace Pixey
 	class Input
 	{
 	public:
+		static Input& Get();
+
+		Input(const Input&) = delete;
+		Input& operator=(const Input&) = delete;
+
 		void Update();
 
 		bool IsKeyDown(SDL_Scancode scancode) const;
@@ -21,6 +26,9 @@ namespace Pixey
 		bool IsMouseButtonDown(SDL_MouseButtonFlags buttonMask) const;
 		bool IsMouseButtonPressed(SDL_MouseButtonFlags buttonMask) const;
 		bool IsMouseButtonReleased(SDL_MouseButtonFlags buttonMask) const;
+
+	private:
+		Input() = default;
 
 	private:
 		static constexpr int NumScancodes = SDL_SCANCODE_COUNT;

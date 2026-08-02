@@ -1,7 +1,13 @@
-#include "Input.h"
+#include "Pixey/Input.h"
 
 namespace Pixey
 {
+	Input& Input::Get()
+	{
+		static Input instance;
+		return instance;
+	}
+
 	void Input::Update()
 	{
 		for (int i = 0; i < NumScancodes; ++i)
