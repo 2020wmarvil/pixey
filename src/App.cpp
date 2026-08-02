@@ -1,7 +1,7 @@
 #include "Pixey/App.h"
 
 #include "Input.h"
-#include "Vulkan/VulkanEngine.h"
+#include "Vulkan/VulkanRenderer.h"
 #include "WindowManager.h"
 
 #include <SDL3/SDL.h>
@@ -15,8 +15,8 @@ namespace Pixey
 
 		Window& window = windowManager.OpenWindow(inApp.GetWindowTitle(), inApp.GetWindowWidth(), inApp.GetWindowHeight());
 
-		VulkanEngine& engine = VulkanEngine::Get();
-		engine.Initialize(&window);
+		VulkanRenderer& renderer = VulkanRenderer::Get();
+		renderer.Initialize(&window);
 
 		Input input;
 		inApp.OnInit();
@@ -51,11 +51,11 @@ namespace Pixey
 			lastTicks = currentTicks;
 
 			inApp.OnFrame(deltaTime);
-			engine.Draw();
+			renderer.Draw();
 		}
 
 		inApp.OnShutdown();
-		engine.Shutdown();
+		renderer.Shutdown();
 		windowManager.Shutdown();
 
 		return 0;

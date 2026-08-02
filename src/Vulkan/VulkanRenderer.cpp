@@ -1,4 +1,4 @@
-#include "VulkanEngine.h"
+#include "VulkanRenderer.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
@@ -13,13 +13,13 @@ namespace Pixey
 {
 	constexpr bool bUseValidationLayers = false;
 
-	VulkanEngine& VulkanEngine::Get()
+	VulkanRenderer& VulkanRenderer::Get()
 	{
-		static VulkanEngine instance;
+		static VulkanRenderer instance;
 		return instance;
 	}
 
-	void VulkanEngine::Initialize(Window* inWindow)
+	void VulkanRenderer::Initialize(Window* inWindow)
 	{
 		assert(!bInitialized);
 
@@ -33,10 +33,10 @@ namespace Pixey
 		bInitialized = true;
 	}
 
-	void VulkanEngine::Shutdown()
+	void VulkanRenderer::Shutdown()
 	{
 		bInitialized = false;
 	}
 
-	void VulkanEngine::Draw() {}
+	void VulkanRenderer::Draw() {}
 }

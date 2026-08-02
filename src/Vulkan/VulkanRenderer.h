@@ -6,24 +6,22 @@ namespace Pixey
 {
 	class Window;
 
-	class VulkanEngine
+	class VulkanRenderer
 	{
 	public:
-		static VulkanEngine& Get();
+		static VulkanRenderer& Get();
 
-		VulkanEngine(const VulkanEngine&) = delete;
-		VulkanEngine& operator=(const VulkanEngine&) = delete;
+		VulkanRenderer(const VulkanRenderer&) = delete;
+		VulkanRenderer& operator=(const VulkanRenderer&) = delete;
 
 		void Initialize(Window* inWindow);
 		void Shutdown();
 		void Draw();
 
 	private:
-		VulkanEngine() = default;
+		VulkanRenderer() = default;
 
 	private:
-		// Non-owning -- caller must keep the window alive for as long as the
-		// engine stays initialized.
 		Window* window = nullptr;
 		VkExtent2D windowExtent = {};
 
