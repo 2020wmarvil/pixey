@@ -6,12 +6,35 @@ namespace Pixey
 {
 	class Window;
 
+	struct DeletionQueue
+	{
+		void PushFunction(std::function<void()>&& function)
+		{
+			deletors.push_back(function);
+		}
+
+		void Flush()
+		{
+			// reverse iterate the deletion queue to execute all the functions
+			for (auto it = deletors.rbegin(); it != deletors.rend(); it++)
+			{
+				(*it)();
+			}
+
+			deletors.clear();
+		}
+
+		std::deque<std::function<void()>> deletors;
+	};
+
 	struct FrameData
 	{
 		VkCommandPool commandPool;
 		VkCommandBuffer mainCommandBuffer;
 		VkSemaphore swapchainSemaphore;
 		VkFence renderFence;
+
+		DeletionQueue deletionQueue;
 	};
 
 	// TODO: 3 frames + mailbox
@@ -44,6 +67,8 @@ namespace Pixey
 
 		FrameData& GetCurrentFrame() { return frames[frameNumber % FRAME_OVERLAP]; };
 
+		void DrawBackground(VkCommandBuffer commandBuffer);
+
 	private:
 		Window* window = nullptr;
 		VkExtent2D windowExtent = {};
@@ -67,11 +92,17 @@ namespace Pixey
 		std::vector<VkImageView> swapchainImageViews;
 		VkExtent2D swapchainExtent;
 
-		// One per swapchain image, indexed by acquired image index rather than frame-in-flight,
-		// since the presentation engine's use of it isn't bounded by our frame-in-flight cadence.
+		// One per swapchain image, indexed by acquired image index rather than frame-in-flight.
 		std::vector<VkSemaphore> renderSemaphores;
 
 		// Frame data
 		FrameData frames[FRAME_OVERLAP];
+
+		VmaAllocator allocator;
+		DeletionQueue deletionQueue;
+
+		// Draw resources
+		AllocatedImage drawImage;
+		VkExtent2D drawExtent;
 	};
 }

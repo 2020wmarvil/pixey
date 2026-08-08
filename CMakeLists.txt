@@ -41,7 +41,8 @@ add_subdirectory(deps/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(deps/vk-bootstrap EXCLUDE_FROM_ALL)
 
 # Vulkan Memory Allocator (header-only-ish)
-add_subdirectory(deps/VulkanMemoryAllocator EXCLUDE_FROM_ALL)
+# SYSTEM: its headers trip our /W4 /WX; exempt them rather than the whole project.
+add_subdirectory(deps/VulkanMemoryAllocator EXCLUDE_FROM_ALL SYSTEM)
 
 # GLM (header-only)
 set(GLM_BUILD_TESTS OFF CACHE BOOL "" FORCE)

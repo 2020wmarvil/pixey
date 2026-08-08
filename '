@@ -97,23 +97,20 @@ namespace Pixey
 		VkCommandBufferBeginInfo commandBufferBeginInfo = VulkanInitializers::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		VK_CHECK(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 
-		drawExtent.width = drawImage.imageExtent.width;
-		drawExtent.height = drawImage.imageExtent.height;
+		// Transition swapchain image into writeable mode before rendering.
+		VulkanUtils::TransitionImage(commandBuffer, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
-		// Transition image into writeable mode before rendering.
-		VulkanUtils::TransitionImage(commandBuffer, drawImage.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+		VkClearColorValue clearValue;
+		float flash = std::abs(std::sin(frameNumber / 120.f));
+		clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
 
-		DrawBackground(commandBuffer);
+		VkImageSubresourceRange clearRange = VulkanInitializers::ImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 
-		// Transition the draw image and the swapchain image into their correct transfer layouts.
-		VulkanUtils::TransitionImage(commandBuffer, drawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-		VulkanUtils::TransitionImage(commandBuffer, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		// Clear image.
+		vkCmdClearColorImage(commandBuffer, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 
-		// Execute a copy from the draw image into the swapchain.
-		VulkanUtils::CopyImageToImage(commandBuffer, drawImage.image, swapchainImages[swapchainImageIndex], drawExtent, swapchainExtent);
-
-		// Set swapchain image layout to Present so we can show it on the screen.
-		VulkanUtils::TransitionImage(commandBuffer, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		// Make the swapchain image into presentable mode.
+		VulkanUtils::TransitionImage(commandBuffer, swapchainImages[swapchainImageIndex],VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 		// Finish recording the command buffer.
 		VK_CHECK(vkEndCommandBuffer(commandBuffer));
@@ -144,18 +141,6 @@ namespace Pixey
 		VK_CHECK(vkQueuePresentKHR(graphicsQueue, &presentInfo));
 
 		frameNumber++;
-	}
-
-	void VulkanRenderer::DrawBackground(VkCommandBuffer commandBuffer)
-	{
-		VkClearColorValue clearValue;
-		float flash = std::abs(std::sin(frameNumber / 120.f));
-		clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
-
-		VkImageSubresourceRange clearRange = VulkanInitializers::ImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-
-		// Clear image.
-		vkCmdClearColorImage(commandBuffer, drawImage.image, VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 	}
 
 	void VulkanRenderer::InitVulkan()
@@ -296,25 +281,25 @@ namespace Pixey
 		drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
 		drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		VkImageCreateInfo imageInfo = VulkanInitializers::ImageCreateInfo(drawImage.imageFormat, drawImageUsages, drawImageExtent);
+		VkImageCreateInfo rimg_info = VulkanInitializers::ImageCreateInfo(drawImage.imageFormat, drawImageUsages, drawImageExtent);
 
 		// For the draw image, we want to allocate it from gpu local memory.
-		VmaAllocationCreateInfo imageAllocInfo = {};
-		imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-		imageAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		VmaAllocationCreateInfo rimg_allocinfo = {};
+		rimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		rimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		// Allocate and create the image.
-		vmaCreateImage(allocator, &imageInfo, &imageAllocInfo, &drawImage.image, &drawImage.allocation, nullptr);
+		vmaCreateImage(allocator, &rimg_info, &rimg_allocinfo, &drawImage.image, &drawImage.allocation, nullptr);
 
-		// Build an image view for the draw image to use for rendering.
-		VkImageViewCreateInfo imageViewInfo = VulkanInitializers::ImageViewCreateInfo(drawImage.imageFormat, drawImage.image, VK_IMAGE_ASPECT_COLOR_BIT);
+		//build a image-view for the draw image to use for rendering
+		VkImageViewCreateInfo rview_info = VulkanInitializers::ImageViewCreateInfo(drawImage.imageFormat, drawImage.image, VK_IMAGE_ASPECT_COLOR_BIT);
 
-		VK_CHECK(vkCreateImageView(device, &imageViewInfo, nullptr, &drawImage.imageView));
+		VK_CHECK(vkCreateImageView(_device, &rview_info, nullptr, &_drawImage.imageView));
 
-		deletionQueue.PushFunction([this]()
-		{
-			vkDestroyImageView(device, drawImage.imageView, nullptr);
-			vmaDestroyImage(allocator, drawImage.image, drawImage.allocation);
+		//add to deletion queues
+		_mainDeletionQueue.push_function([=]() {
+			vkDestroyImageView(_device, _drawImage.imageView, nullptr);
+			vmaDestroyImage(_allocator, _drawImage.image, _drawImage.allocation);
 		});
 	}
 
