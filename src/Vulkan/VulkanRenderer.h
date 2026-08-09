@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Vulkan/VulkanTypes.h"
+#include "VulkanDescriptors.h"
+#include "VulkanTypes.h"
 
 namespace Pixey
 {
@@ -60,6 +61,9 @@ namespace Pixey
 		void InitSwapchain();
 		void InitCommands();
 		void InitSyncStructures();
+		void InitDescriptors();
+		void InitPipelines();
+		void InitBackgroundPipelines();
 
 		// Swapchain
 		void CreateSwapchain(uint32_t width, uint32_t height);
@@ -104,5 +108,12 @@ namespace Pixey
 		// Draw resources
 		AllocatedImage drawImage;
 		VkExtent2D drawExtent;
+		VkDescriptorSet drawImageDescriptors;
+		VkDescriptorSetLayout drawImageDescriptorLayout;
+		DescriptorAllocator globalDescriptorAllocator;
+
+		// Pipelines
+		VkPipeline gradientPipeline;
+		VkPipelineLayout gradientPipelineLayout;
 	};
 }

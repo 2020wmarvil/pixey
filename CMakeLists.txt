@@ -111,10 +111,14 @@ endif()
 
 # Shaders: GLSL -> SPIR-V -> embedded C++ header
 include(PixeyShaders)
+file(GLOB PIXEY_SHADER_FILES CONFIGURE_DEPENDS
+	shaders/*.vert
+	shaders/*.frag
+	shaders/*.comp
+)
 pixey_compile_shaders(pixey
 	SHADERS
-		shaders/sprite.vert
-		shaders/sprite.frag
+		${PIXEY_SHADER_FILES}
 )
 
 add_library(pixey::pixey ALIAS pixey)

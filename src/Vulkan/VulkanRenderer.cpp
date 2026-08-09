@@ -5,14 +5,15 @@
 
 #include "VkBootstrap.h"
 #define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
-
-#include "VulkanInitializers.h"
-#include "VulkanTypes.h"
-#include "VulkanImages.h"
 #include "Pixey/Window.h"
 
 #include <cassert>
+
+#include "vk_mem_alloc.h"
+#include "VulkanImages.h"
+#include "VulkanInitializers.h"
+#include "VulkanPipelines.h"
+#include "VulkanTypes.h"
 
 namespace Pixey
 {
@@ -40,6 +41,8 @@ namespace Pixey
 		InitSwapchain();
 		InitCommands();
 		InitSyncStructures();
+		InitDescriptors();
+		InitPipelines();
 
 		bInitialized = true;
 	}
@@ -248,6 +251,87 @@ namespace Pixey
 
 			VK_CHECK(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frames[i].swapchainSemaphore));
 		}
+	}
+
+	void VulkanRenderer::InitDescriptors()
+	{
+		// Create a descriptor pool that will hold 10 sets with 1 image each.
+		std::vector<DescriptorAllocator::PoolSizeRatio> sizes =
+		{
+			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
+		};
+
+		globalDescriptorAllocator.InitPool(device, 10, sizes);
+
+		// Make the descriptor set layout for our compute draw.
+		{
+			DescriptorLayoutBuilder builder;
+			builder.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+			drawImageDescriptorLayout = builder.Build(device, VK_SHADER_STAGE_COMPUTE_BIT);
+		}
+
+		// Allocate a descriptor set for our draw image.
+		drawImageDescriptors = globalDescriptorAllocator.Allocate(device, drawImageDescriptorLayout);
+
+		VkDescriptorImageInfo imgInfo{};
+		imgInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		imgInfo.imageView = drawImage.imageView;
+
+		VkWriteDescriptorSet drawImageWrite = {};
+		drawImageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		drawImageWrite.pNext = nullptr;
+
+		drawImageWrite.dstBinding = 0;
+		drawImageWrite.dstSet = drawImageDescriptors;
+		drawImageWrite.descriptorCount = 1;
+		drawImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		drawImageWrite.pImageInfo = &imgInfo;
+
+		vkUpdateDescriptorSets(device, 1, &drawImageWrite, 0, nullptr);
+
+		deletionQueue.PushFunction([&]()
+		{
+			globalDescriptorAllocator.DestroyPool(device);
+
+			vkDestroyDescriptorSetLayout(device, drawImageDescriptorLayout, nullptr);
+		});
+	}
+
+	void VulkanRenderer::InitPipelines()
+	{
+		InitBackgroundPipelines();
+	}
+
+	void VulkanRenderer::InitBackgroundPipelines()
+	{
+		VkPipelineLayoutCreateInfo computeLayout{};
+		computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		computeLayout.pNext = nullptr;
+		computeLayout.pSetLayouts = &drawImageDescriptorLayout;
+		computeLayout.setLayoutCount = 1;
+
+		VK_CHECK(vkCreatePipelineLayout(device, &computeLayout, nullptr, &gradientPipelineLayout));
+
+		VkShaderModule computeDrawShader;
+		if (!VulkanInitializers::LoadShaderModule("../../shaders/gradient.comp.spv", device, &computeDrawShader))
+		{
+			fmt::print("Error when building the compute shader \n");
+		}
+
+		VkPipelineShaderStageCreateInfo stageinfo{};
+		stageinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		stageinfo.pNext = nullptr;
+		stageinfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+		stageinfo.module = computeDrawShader;
+		stageinfo.pName = "main";
+
+		VkComputePipelineCreateInfo computePipelineCreateInfo{};
+		computePipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+		computePipelineCreateInfo.pNext = nullptr;
+		computePipelineCreateInfo.layout = gradientPipelineLayout;
+		computePipelineCreateInfo.stage = stageinfo;
+
+		VK_CHECK(vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &gradientPipeline));
 	}
 
 	void VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
