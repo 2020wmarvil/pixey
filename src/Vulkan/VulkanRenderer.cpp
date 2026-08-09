@@ -8,6 +8,7 @@
 #include "Pixey/Window.h"
 
 #include <cassert>
+#include <cmath>
 
 #include "vk_mem_alloc.h"
 #include "VulkanImages.h"
@@ -155,14 +156,10 @@ namespace Pixey
 
 	void VulkanRenderer::DrawBackground(VkCommandBuffer commandBuffer)
 	{
-		VkClearColorValue clearValue;
-		float flash = std::abs(std::sin(frameNumber / 120.f));
-		clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
-
-		VkImageSubresourceRange clearRange = VulkanInitializers::ImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-
-		// Clear image.
-		vkCmdClearColorImage(commandBuffer, drawImage.image, VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
+		// Bind the gradient drawing compute pipeline.
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, gradientPipeline);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, gradientPipelineLayout, 0, 1, &drawImageDescriptors, 0, nullptr);
+		vkCmdDispatch(commandBuffer, static_cast<uint32_t>(std::ceil(drawExtent.width / 16.0)), static_cast<uint32_t>(std::ceil(drawExtent.height / 16.0)), 1);
 	}
 
 	void VulkanRenderer::InitVulkan()
@@ -336,6 +333,14 @@ namespace Pixey
 		computePipelineCreateInfo.stage = stageinfo;
 
 		VK_CHECK(vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &gradientPipeline));
+
+		vkDestroyShaderModule(device, computeDrawShader, nullptr);
+
+		deletionQueue.PushFunction([&]()
+		{
+			vkDestroyPipelineLayout(device, gradientPipelineLayout, nullptr);
+			vkDestroyPipeline(device, gradientPipeline, nullptr);
+		});
 	}
 
 	void VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
