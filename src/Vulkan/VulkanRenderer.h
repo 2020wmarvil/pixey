@@ -73,6 +73,10 @@ namespace Pixey
 
 		void DrawBackground(VkCommandBuffer commandBuffer);
 
+#ifndef PIXEY_SHIPPING
+		void ReloadShaders();
+#endif
+
 	private:
 		Window* window = nullptr;
 		VkExtent2D windowExtent = {};

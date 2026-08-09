@@ -16,6 +16,7 @@
 #include "VulkanPipelines.h"
 #include "VulkanTypes.h"
 
+#include "Pixey/Input.h"
 #include "Pixey/Log.h"
 
 #include "Pixey/Shaders/gradient_comp.spv.h"
@@ -84,6 +85,13 @@ namespace Pixey
 
 	void VulkanRenderer::Draw()
 	{
+#ifndef PIXEY_SHIPPING
+		if (Input::Get().IsKeyPressed(SDL_SCANCODE_F5))
+		{
+			ReloadShaders();
+		}
+#endif
+
 		FrameData& currentFrame = GetCurrentFrame();
 
 		// Wait until the gpu has finished rendering the last frame. Timeout of 1 second.
@@ -161,6 +169,15 @@ namespace Pixey
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, gradientPipelineLayout, 0, 1, &drawImageDescriptors, 0, nullptr);
 		vkCmdDispatch(commandBuffer, static_cast<uint32_t>(std::ceil(drawExtent.width / 16.0)), static_cast<uint32_t>(std::ceil(drawExtent.height / 16.0)), 1);
 	}
+
+#ifndef PIXEY_SHIPPING
+	void VulkanRenderer::ReloadShaders()
+	{
+		// TODO: recompile PIXEY_SHADER_SOURCE_DIR "/gradient.comp" via shaderc and
+		// hot-swap gradientPipeline (see design: vkDeviceWaitIdle, then rebuild;
+		// fall back to an error shader on a failed compile).
+	}
+#endif
 
 	void VulkanRenderer::InitVulkan()
 	{

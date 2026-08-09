@@ -17,6 +17,10 @@ option(PIXEY_BUILD_SAMPLE
 	"Build the in-tree pixey-sample dev driver"
 	${PIXEY_IS_TOP_LEVEL})
 
+option(PIXEY_SHIPPING
+	"Build a shipping configuration (strips dev-only tooling)"
+	OFF)
+
 if(PIXEY_IS_TOP_LEVEL)
 	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
@@ -24,7 +28,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # ---- Vulkan SDK ------------------------------------------------------------
-find_package(Vulkan REQUIRED COMPONENTS glslangValidator)
+find_package(Vulkan REQUIRED COMPONENTS glslangValidator shaderc_combined)
 
 # ---- Third-party submodules ------------------------------------------------
 # All deps under deps/ are expected to be populated git submodules.
@@ -103,6 +107,15 @@ if(MSVC)
 	# /GR-          -- disable RTTI (style guide: no dynamic_cast / typeid)
 	target_compile_options(pixey PRIVATE /W4 /WX /permissive- /GR-)
 	target_compile_definitions(pixey PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()
+
+if(PIXEY_SHIPPING)
+	target_compile_definitions(pixey PUBLIC PIXEY_SHIPPING)
+else()
+	target_link_libraries(pixey PRIVATE Vulkan::shaderc_combined)
+	target_compile_definitions(pixey PRIVATE
+		PIXEY_SHADER_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+	)
 endif()
 
 # Exceptions: off by convention. Engine code must not throw.
