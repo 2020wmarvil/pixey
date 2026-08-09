@@ -4,5 +4,5 @@
 
 namespace Pixey::VulkanInitializers
 {
-	bool LoadShaderModule(const char* filePath, VkDevice device, VkShaderModule* outShaderModule);
+	bool LoadShaderModule(const uint8_t* code, size_t codeSize, VkDevice device, VkShaderModule* outShaderModule);
 }

@@ -66,6 +66,7 @@ add_library(pixey STATIC
 	include/Pixey/App.h
 	include/Pixey/EntryPoint.h
 	include/Pixey/Input.h
+	include/Pixey/Log.h
 	include/Pixey/Pixey.h
 	include/Pixey/Types.h
 	include/Pixey/Window.h

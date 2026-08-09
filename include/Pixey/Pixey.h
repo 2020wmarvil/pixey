@@ -2,6 +2,7 @@
 
 #include "Pixey/App.h"
 #include "Pixey/Input.h"
+#include "Pixey/Log.h"
 #include "Pixey/Types.h"
 #include "Pixey/Window.h"
 #include "Pixey/WindowManager.h"

@@ -15,6 +15,10 @@
 #include "VulkanPipelines.h"
 #include "VulkanTypes.h"
 
+#include "Pixey/Log.h"
+
+#include "Pixey/Shaders/gradient_comp.spv.h"
+
 namespace Pixey
 {
 	constexpr bool bUseValidationLayers = true;
@@ -313,9 +317,9 @@ namespace Pixey
 		VK_CHECK(vkCreatePipelineLayout(device, &computeLayout, nullptr, &gradientPipelineLayout));
 
 		VkShaderModule computeDrawShader;
-		if (!VulkanInitializers::LoadShaderModule("../../shaders/gradient.comp.spv", device, &computeDrawShader))
+		if (!VulkanInitializers::LoadShaderModule(Pixey::Shaders::gradient_comp_spv, sizeof(Pixey::Shaders::gradient_comp_spv), device, &computeDrawShader))
 		{
-			fmt::print("Error when building the compute shader \n");
+			Pixey::Log::Error("Error when building the compute shader");
 		}
 
 		VkPipelineShaderStageCreateInfo stageinfo{};
