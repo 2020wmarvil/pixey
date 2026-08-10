@@ -56,6 +56,24 @@ add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE deps/stb)
 
+# Dear ImGui (docking branch, not a CMake project -- synthesize a static lib target).
+# SDL3 + Vulkan backends only; core sources plus imgui_demo.cpp for ShowDemoWindow().
+add_library(imgui STATIC
+	deps/imgui/imgui.cpp
+	deps/imgui/imgui_demo.cpp
+	deps/imgui/imgui_draw.cpp
+	deps/imgui/imgui_tables.cpp
+	deps/imgui/imgui_widgets.cpp
+	deps/imgui/backends/imgui_impl_sdl3.cpp
+	deps/imgui/backends/imgui_impl_vulkan.cpp
+)
+target_include_directories(imgui SYSTEM PUBLIC
+	deps/imgui
+	deps/imgui/backends
+)
+target_link_libraries(imgui PUBLIC Vulkan::Vulkan SDL3::SDL3-static)
+set_target_properties(imgui PROPERTIES FOLDER "pixey/deps")
+
 # ---- Pixey dynamic library --------------------------------------------------
 # src/ is globbed (CONFIGURE_DEPENDS) so new .h/.cpp files build without
 # touching this file. include/Pixey stays explicit -- it's the small,
@@ -103,6 +121,7 @@ target_link_libraries(pixey
 		vk-bootstrap::vk-bootstrap
 		GPUOpen::VulkanMemoryAllocator
 		stb
+		imgui
 )
 
 if(MSVC)
