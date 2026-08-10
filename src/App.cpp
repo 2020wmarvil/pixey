@@ -1,6 +1,7 @@
 #include "Pixey/App.h"
 
 #include "Pixey/Input.h"
+#include "Pixey/Log.h"
 #include "Pixey/WindowManager.h"
 #include "Vulkan/VulkanRenderer.h"
 
@@ -10,6 +11,9 @@ namespace Pixey
 {
 	int RunApp(App& inApp, int /*argc*/, char* /*argv*/[])
 	{
+		Log::Init();
+		Log::Info("Pixey engine starting");
+
 		WindowManager& windowManager = WindowManager::Get();
 		windowManager.Initialize();
 
@@ -59,6 +63,9 @@ namespace Pixey
 		inApp.OnShutdown();
 		renderer.Shutdown();
 		windowManager.Shutdown();
+
+		Log::Info("Pixey engine shutting down");
+		Log::Shutdown();
 
 		return 0;
 	}

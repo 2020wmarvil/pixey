@@ -15,7 +15,10 @@ namespace Pixey::Log
 		Error,
 	};
 
-	PIXEY_API void Write(Level level, std::string_view message);
+	void Init();
+	void Shutdown();
+
+	void Write(Level level, std::string_view message);
 
 	template<typename... Args>
 	void Info(std::format_string<Args...> fmt, Args&&... args)

@@ -37,3 +37,6 @@ Desktop.ini
 *.pdb
 *.exp
 *.ilk
+
+# Runtime-generated
+Logs/

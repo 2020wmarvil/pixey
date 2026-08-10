@@ -1,5 +1,6 @@
 #include "Pixey/WindowManager.h"
 
+#include "Pixey/Log.h"
 #include "Vulkan/VulkanRenderer.h"
 
 #include <SDL3/SDL.h>
@@ -21,6 +22,8 @@ namespace Pixey
 		SDL_Init(SDL_INIT_VIDEO);
 
 		bInitialized = true;
+
+		Log::Info("WindowManager initialized");
 	}
 
 	void WindowManager::Shutdown()
@@ -31,6 +34,8 @@ namespace Pixey
 		SDL_Quit();
 
 		bInitialized = false;
+
+		Log::Info("WindowManager shut down");
 	}
 
 	Window& WindowManager::OpenWindow(const char* title, int width, int height)
@@ -39,6 +44,8 @@ namespace Pixey
 		Window& window = *windows.back();
 
 		VulkanRenderer::Get().RegisterWindow(window);
+
+		Log::Info("Opened window \"{}\" ({}x{})", title, width, height);
 
 		return window;
 	}

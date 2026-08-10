@@ -59,6 +59,8 @@ namespace Pixey
 		InitPipelines();
 
 		bInitialized = true;
+
+		Pixey::Log::Info("Renderer initialized");
 	}
 
 	void VulkanRenderer::Shutdown()
@@ -86,6 +88,8 @@ namespace Pixey
 
 			vkb::destroy_debug_utils_messenger(instance, debugMessenger);
 			vkDestroyInstance(instance, nullptr);
+
+			Pixey::Log::Info("Renderer shut down");
 		}
 
 		bInitialized = false;
@@ -284,6 +288,8 @@ namespace Pixey
 			.set_surface(surface)
 			.select()
 			.value();
+
+		Pixey::Log::Info("Selected GPU: {}", physicalDevice.name);
 
 		// Create the final vulkan device.
 		vkb::DeviceBuilder deviceBuilder{ physicalDevice };

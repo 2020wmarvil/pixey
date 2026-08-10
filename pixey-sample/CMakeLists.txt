@@ -21,14 +21,19 @@ add_custom_command(TARGET pixey-sample POST_BUILD
 	COMMENT "Copying pixey-sample assets"
 )
 
-# pixey is a DLL, copy it next to the exe so the loader can find it.
-add_custom_command(TARGET pixey-sample POST_BUILD
+add_custom_command(
+	OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/pixey.dll"
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		"$<TARGET_FILE:pixey>"
-		"$<TARGET_FILE_DIR:pixey-sample>"
+		"${CMAKE_CURRENT_BINARY_DIR}"
+	DEPENDS pixey
 	COMMENT "Copying pixey.dll"
 	VERBATIM
 )
+add_custom_target(pixey_dll_copy ALL
+	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/pixey.dll"
+)
+add_dependencies(pixey-sample pixey_dll_copy)
 
 if(NOT PIXEY_SHIPPING)
 	# shaderc_shared.dll is loaded at runtime, not just link time.
