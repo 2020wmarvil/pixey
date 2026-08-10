@@ -20,3 +20,15 @@ add_custom_command(TARGET pixey-sample POST_BUILD
 		"$<TARGET_FILE_DIR:pixey-sample>/assets"
 	COMMENT "Copying pixey-sample assets"
 )
+
+if(NOT PIXEY_SHIPPING)
+	# shaderc_shared.dll is loaded at runtime, not just link time.
+    # copy it next to the exe so the dev build can actually launch.
+	add_custom_command(TARGET pixey-sample POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$ENV{VULKAN_SDK}/Bin/shaderc_shared.dll"
+			"$<TARGET_FILE_DIR:pixey-sample>"
+		COMMENT "Copying shaderc_shared.dll"
+		VERBATIM
+	)
+endif()

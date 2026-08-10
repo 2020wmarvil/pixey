@@ -241,10 +241,10 @@ namespace Pixey
 			Pixey::Log::Error("Falling back to the error shader for gradient.comp");
 		}
 
-		// TODO: vkDeviceWaitIdle, destroy the old gradientPipeline, and rebuild via
-		// gradientPipeline = BuildGradientPipeline(spirvCode, spirvSize);
-		(void)spirvCode;
-		(void)spirvSize;
+		VK_CHECK(vkDeviceWaitIdle(device));
+
+		vkDestroyPipeline(device, gradientPipeline, nullptr);
+		gradientPipeline = BuildGradientPipeline(spirvCode, spirvSize);
 	}
 #endif
 

@@ -28,7 +28,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # ---- Vulkan SDK ------------------------------------------------------------
-find_package(Vulkan REQUIRED COMPONENTS glslangValidator shaderc_combined)
+find_package(Vulkan REQUIRED COMPONENTS glslangValidator)
 
 # ---- Third-party submodules ------------------------------------------------
 # All deps under deps/ are expected to be populated git submodules.
@@ -112,7 +112,26 @@ endif()
 if(PIXEY_SHIPPING)
 	target_compile_definitions(pixey PUBLIC PIXEY_SHIPPING)
 else()
-	target_link_libraries(pixey PRIVATE Vulkan::shaderc_combined)
+	# The Vulkan SDK only ships a release-CRT shaderc_combined (no debug variant),
+	# which causes a RuntimeLibrary/_ITERATOR_DEBUG_LEVEL mismatch (LNK2038) when
+	# statically linked into a Debug build. Link the shared (DLL) variant instead:
+	# its object code doesn't get combined into our binary, so its CRT config
+	# doesn't need to match ours. FindVulkan doesn't expose this as a component,
+	# so it's wired up by hand from $ENV{VULKAN_SDK}.
+	if(NOT DEFINED ENV{VULKAN_SDK})
+		message(FATAL_ERROR "VULKAN_SDK environment variable is not set; required to locate shaderc_shared")
+	endif()
+
+	if(NOT TARGET shaderc::shaderc_shared)
+		add_library(shaderc::shaderc_shared SHARED IMPORTED)
+		set_target_properties(shaderc::shaderc_shared PROPERTIES
+			IMPORTED_IMPLIB               "$ENV{VULKAN_SDK}/Lib/shaderc_shared.lib"
+			IMPORTED_LOCATION              "$ENV{VULKAN_SDK}/Bin/shaderc_shared.dll"
+			INTERFACE_INCLUDE_DIRECTORIES "$ENV{VULKAN_SDK}/Include"
+		)
+	endif()
+
+	target_link_libraries(pixey PRIVATE shaderc::shaderc_shared)
 	target_compile_definitions(pixey PRIVATE
 		PIXEY_SHADER_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/shaders"
 	)
