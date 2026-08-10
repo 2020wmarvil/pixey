@@ -3,6 +3,12 @@
 #include "VulkanDescriptors.h"
 #include "VulkanTypes.h"
 
+#ifndef PIXEY_SHIPPING
+#include <filesystem>
+
+#include <shaderc/shaderc.hpp>
+#endif
+
 namespace Pixey
 {
 	class Window;
@@ -64,6 +70,7 @@ namespace Pixey
 		void InitDescriptors();
 		void InitPipelines();
 		void InitBackgroundPipelines();
+		VkPipeline BuildGradientPipeline(const uint8_t* spirvCode, size_t spirvSize);
 
 		// Swapchain
 		void CreateSwapchain(uint32_t width, uint32_t height);
@@ -74,6 +81,7 @@ namespace Pixey
 		void DrawBackground(VkCommandBuffer commandBuffer);
 
 #ifndef PIXEY_SHIPPING
+		std::vector<uint32_t> CompileShaderFromSource(const std::filesystem::path& sourcePath, shaderc_shader_kind kind);
 		void ReloadShaders();
 #endif
 
@@ -119,5 +127,9 @@ namespace Pixey
 		// Pipelines
 		VkPipeline gradientPipeline;
 		VkPipelineLayout gradientPipelineLayout;
+
+#ifndef PIXEY_SHIPPING
+		std::filesystem::file_time_type gradientShaderLastWriteTime{};
+#endif
 	};
 }

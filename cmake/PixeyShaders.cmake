@@ -1,16 +1,23 @@
-# Compile GLSL shaders to SPIR-V and embed them as C++ byte arrays.
+# Compile GLSL shaders to SPIR-V and embed them all as C++ byte arrays behind
+# a single name-keyed lookup table.
 #
 # Usage:
 #   pixey_compile_shaders(<target>
 #       SHADERS <relative_or_abs_path>...
 #   )
 #
-# Each shader produces a generated header at:
-#   <binary_dir>/generated/Pixey/Shaders/<stem>_<stage>.spv.h
-# Containing:
-#   namespace Pixey::Shaders {
-#       inline constexpr uint8_t <stem>_<stage>_spv[] = { ... };
+# Produces one generated header at:
+#   <binary_dir>/generated/Pixey/Shaders/EmbeddedShaders.h
+# Containing, per shader, an inline constexpr uint8_t byte array, plus:
+#   namespace Pixey::Shaders
+#   {
+#       struct EmbeddedShader { std::string_view name; const uint8_t* data; size_t size; };
+#       inline constexpr EmbeddedShader kEmbeddedShaders[] = { ... };
+#       const EmbeddedShader* FindEmbeddedShader(std::string_view name);
 #   }
+# where `name` is the shader's filename (e.g. "gradient.comp"). Adding a new
+# shader to SHADERS requires no matching C++ #include or symbol -- look it up
+# by filename via FindEmbeddedShader at the call site.
 #
 # The generated include dir is added to <target> as PRIVATE.
 
@@ -21,7 +28,8 @@ function(pixey_compile_shaders TARGET)
 	set(spv_out_dir     "${gen_include_dir}/Pixey/Shaders")
 	file(MAKE_DIRECTORY "${spv_out_dir}")
 
-	set(generated_headers "")
+	set(spv_files "")
+	set(shader_names "")
 
 	foreach(shader_path IN LISTS ARG_SHADERS)
 		get_filename_component(shader_abs  "${shader_path}" ABSOLUTE)
@@ -30,8 +38,7 @@ function(pixey_compile_shaders TARGET)
 		string(REPLACE "." "_" shader_id "${shader_name}")
 		string(TOLOWER "${shader_id}" shader_id)
 
-		set(spv_file    "${spv_out_dir}/${shader_id}.spv")
-		set(header_file "${spv_out_dir}/${shader_id}.spv.h")
+		set(spv_file "${spv_out_dir}/${shader_id}.spv")
 
 		add_custom_command(
 			OUTPUT  "${spv_file}"
@@ -43,24 +50,27 @@ function(pixey_compile_shaders TARGET)
 			VERBATIM
 		)
 
-		add_custom_command(
-			OUTPUT  "${header_file}"
-			COMMAND ${CMAKE_COMMAND}
-					-DSPV_FILE=${spv_file}
-					-DHEADER_FILE=${header_file}
-					-DSYMBOL=${shader_id}_spv
-					-P "${CMAKE_SOURCE_DIR}/cmake/PixeyEmbedSpv.cmake"
-			DEPENDS "${spv_file}"
-					"${CMAKE_SOURCE_DIR}/cmake/PixeyEmbedSpv.cmake"
-			COMMENT "Embedding ${shader_id}.spv"
-			VERBATIM
-		)
-
-		list(APPEND generated_headers "${header_file}")
+		list(APPEND spv_files "${spv_file}")
+		list(APPEND shader_names "${shader_name}")
 	endforeach()
 
+	set(registry_header "${spv_out_dir}/EmbeddedShaders.h")
+
+	add_custom_command(
+		OUTPUT  "${registry_header}"
+		COMMAND ${CMAKE_COMMAND}
+				"-DSPV_FILES=${spv_files}"
+				"-DSHADER_NAMES=${shader_names}"
+				-DHEADER_FILE=${registry_header}
+				-P "${CMAKE_SOURCE_DIR}/cmake/PixeyEmbedSpv.cmake"
+		DEPENDS ${spv_files}
+				"${CMAKE_SOURCE_DIR}/cmake/PixeyEmbedSpv.cmake"
+		COMMENT "Embedding compiled shaders"
+		VERBATIM
+	)
+
 	set(shaders_target "${TARGET}_shaders")
-	add_custom_target(${shaders_target} DEPENDS ${generated_headers})
+	add_custom_target(${shaders_target} DEPENDS "${registry_header}")
 	add_dependencies(${TARGET} ${shaders_target})
 
 	target_include_directories(${TARGET} PRIVATE "${gen_include_dir}")

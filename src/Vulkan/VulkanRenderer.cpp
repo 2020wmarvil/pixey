@@ -19,7 +19,15 @@
 #include "Pixey/Input.h"
 #include "Pixey/Log.h"
 
-#include "Pixey/Shaders/gradient_comp.spv.h"
+#include "Pixey/Shaders/EmbeddedShaders.h"
+
+#ifndef PIXEY_SHIPPING
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+
+#include <shaderc/shaderc.hpp>
+#endif
 
 namespace Pixey
 {
@@ -86,9 +94,14 @@ namespace Pixey
 	void VulkanRenderer::Draw()
 	{
 #ifndef PIXEY_SHIPPING
-		if (Input::Get().IsKeyPressed(SDL_SCANCODE_F5))
 		{
-			ReloadShaders();
+			const Input& input = Input::Get();
+			const bool bCtrlDown = input.IsKeyDown(SDL_SCANCODE_LCTRL) || input.IsKeyDown(SDL_SCANCODE_RCTRL);
+
+			if (bCtrlDown && input.IsKeyPressed(SDL_SCANCODE_R))
+			{
+				ReloadShaders();
+			}
 		}
 #endif
 
@@ -171,11 +184,67 @@ namespace Pixey
 	}
 
 #ifndef PIXEY_SHIPPING
+	std::vector<uint32_t> VulkanRenderer::CompileShaderFromSource(const std::filesystem::path& sourcePath, shaderc_shader_kind kind)
+	{
+		std::ifstream file(sourcePath, std::ios::binary);
+		std::ostringstream contents;
+		contents << file.rdbuf();
+		const std::string source = contents.str();
+
+		shaderc::CompileOptions options;
+		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+		options.SetOptimizationLevel(shaderc_optimization_level_zero);
+
+		shaderc::Compiler compiler;
+		shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(source, kind, sourcePath.string().c_str(), options);
+
+		if (result.GetCompilationStatus() != shaderc_compilation_status_success)
+		{
+			Pixey::Log::Error("Shader compile failed ({}): {}", sourcePath.string(), result.GetErrorMessage());
+			return {};
+		}
+
+		return std::vector<uint32_t>(result.cbegin(), result.cend());
+	}
+
 	void VulkanRenderer::ReloadShaders()
 	{
-		// TODO: recompile PIXEY_SHADER_SOURCE_DIR "/gradient.comp" via shaderc and
-		// hot-swap gradientPipeline (see design: vkDeviceWaitIdle, then rebuild;
-		// fall back to an error shader on a failed compile).
+		const std::filesystem::path shaderPath = std::filesystem::path(PIXEY_SHADER_SOURCE_DIR) / "gradient.comp";
+
+		const std::filesystem::file_time_type writeTime = std::filesystem::last_write_time(shaderPath);
+		if (writeTime == gradientShaderLastWriteTime)
+		{
+			return;
+		}
+		gradientShaderLastWriteTime = writeTime;
+
+		const std::vector<uint32_t> spirv = CompileShaderFromSource(shaderPath, shaderc_glsl_compute_shader);
+
+		const uint8_t* spirvCode;
+		size_t spirvSize;
+
+		if (!spirv.empty())
+		{
+			spirvCode = reinterpret_cast<const uint8_t*>(spirv.data());
+			spirvSize = spirv.size() * sizeof(uint32_t);
+
+			Pixey::Log::Info("Reloaded gradient.comp ({} bytes)", spirvSize);
+		}
+		else
+		{
+			const Shaders::EmbeddedShader* errorShader = Shaders::FindEmbeddedShader("error.comp");
+			assert(errorShader);
+
+			spirvCode = errorShader->data;
+			spirvSize = errorShader->size;
+
+			Pixey::Log::Error("Falling back to the error shader for gradient.comp");
+		}
+
+		// TODO: vkDeviceWaitIdle, destroy the old gradientPipeline, and rebuild via
+		// gradientPipeline = BuildGradientPipeline(spirvCode, spirvSize);
+		(void)spirvCode;
+		(void)spirvSize;
 	}
 #endif
 
@@ -330,8 +399,40 @@ namespace Pixey
 
 		VK_CHECK(vkCreatePipelineLayout(device, &computeLayout, nullptr, &gradientPipelineLayout));
 
+#ifdef PIXEY_SHIPPING
+		const Shaders::EmbeddedShader* gradientShader = Shaders::FindEmbeddedShader("gradient.comp");
+		assert(gradientShader);
+
+		gradientPipeline = BuildGradientPipeline(gradientShader->data, gradientShader->size);
+#else
+		const std::filesystem::path shaderPath = std::filesystem::path(PIXEY_SHADER_SOURCE_DIR) / "gradient.comp";
+		gradientShaderLastWriteTime = std::filesystem::last_write_time(shaderPath);
+
+		const std::vector<uint32_t> spirv = CompileShaderFromSource(shaderPath, shaderc_glsl_compute_shader);
+		if (!spirv.empty())
+		{
+			gradientPipeline = BuildGradientPipeline(reinterpret_cast<const uint8_t*>(spirv.data()), spirv.size() * sizeof(uint32_t));
+		}
+		else
+		{
+			const Shaders::EmbeddedShader* errorShader = Shaders::FindEmbeddedShader("error.comp");
+			assert(errorShader);
+
+			gradientPipeline = BuildGradientPipeline(errorShader->data, errorShader->size);
+		}
+#endif
+
+		deletionQueue.PushFunction([&]()
+		{
+			vkDestroyPipelineLayout(device, gradientPipelineLayout, nullptr);
+			vkDestroyPipeline(device, gradientPipeline, nullptr);
+		});
+	}
+
+	VkPipeline VulkanRenderer::BuildGradientPipeline(const uint8_t* spirvCode, size_t spirvSize)
+	{
 		VkShaderModule computeDrawShader;
-		if (!VulkanInitializers::LoadShaderModule(Pixey::Shaders::gradient_comp_spv, sizeof(Pixey::Shaders::gradient_comp_spv), device, &computeDrawShader))
+		if (!VulkanInitializers::LoadShaderModule(spirvCode, spirvSize, device, &computeDrawShader))
 		{
 			Pixey::Log::Error("Error when building the compute shader");
 		}
@@ -349,15 +450,12 @@ namespace Pixey
 		computePipelineCreateInfo.layout = gradientPipelineLayout;
 		computePipelineCreateInfo.stage = stageinfo;
 
-		VK_CHECK(vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &gradientPipeline));
+		VkPipeline pipeline;
+		VK_CHECK(vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &pipeline));
 
 		vkDestroyShaderModule(device, computeDrawShader, nullptr);
 
-		deletionQueue.PushFunction([&]()
-		{
-			vkDestroyPipelineLayout(device, gradientPipelineLayout, nullptr);
-			vkDestroyPipeline(device, gradientPipeline, nullptr);
-		});
+		return pipeline;
 	}
 
 	void VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
