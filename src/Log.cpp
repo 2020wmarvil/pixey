@@ -1,10 +1,12 @@
 #include "Pixey/Log.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <vector>
 
 #include <SDL3/SDL.h>
 
@@ -28,6 +30,35 @@ namespace Pixey::Log
 		}
 
 		std::ofstream logFile;
+
+		constexpr size_t MaxBackupLogs = 10;
+
+		// Filenames are "Pixey_YYYY-MM-DD_HH-MM-SS.log", so a plain path sort
+		// is also a chronological sort.
+		void PruneBackups(const std::filesystem::path& backupDir)
+		{
+			std::vector<std::filesystem::path> backups;
+			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(backupDir))
+			{
+				if (entry.is_regular_file())
+				{
+					backups.push_back(entry.path());
+				}
+			}
+
+			if (backups.size() <= MaxBackupLogs)
+			{
+				return;
+			}
+
+			std::sort(backups.begin(), backups.end());
+
+			const size_t numToDelete = backups.size() - MaxBackupLogs;
+			for (size_t i = 0; i < numToDelete; ++i)
+			{
+				std::filesystem::remove(backups[i]);
+			}
+		}
 	}
 
 	void Init()
@@ -58,6 +89,8 @@ namespace Pixey::Log
 				localTm.tm_hour, localTm.tm_min, localTm.tm_sec);
 
 			std::filesystem::rename(currentLogPath, backupDir / std::format("Pixey_{}.log", timestamp));
+
+			PruneBackups(backupDir);
 		}
 
 		logFile.open(currentLogPath, std::ios::out | std::ios::trunc);
