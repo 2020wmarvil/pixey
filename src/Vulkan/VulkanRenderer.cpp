@@ -57,6 +57,7 @@ namespace Pixey
 		InitSyncStructures();
 		InitDescriptors();
 		InitPipelines();
+		InitImgui();
 
 		bInitialized = true;
 
@@ -185,6 +186,28 @@ namespace Pixey
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, gradientPipeline);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, gradientPipelineLayout, 0, 1, &drawImageDescriptors, 0, nullptr);
 		vkCmdDispatch(commandBuffer, static_cast<uint32_t>(std::ceil(drawExtent.width / 16.0)), static_cast<uint32_t>(std::ceil(drawExtent.height / 16.0)), 1);
+	}
+
+	void VulkanRenderer::ImmediateSubmit(std::function<void(VkCommandBuffer commandBuffer)>&& function)
+	{
+		VK_CHECK(vkResetFences(device, 1, &immediateFence));
+		VK_CHECK(vkResetCommandBuffer(immediateCommandBuffer, 0));
+
+		VkCommandBuffer commandBuffer = immediateCommandBuffer;
+		VkCommandBufferBeginInfo cmdBeginInfo = VulkanInitializers::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+		VK_CHECK(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
+
+		function(commandBuffer);
+
+		VK_CHECK(vkEndCommandBuffer(commandBuffer));
+
+		VkCommandBufferSubmitInfo commandInfo = VulkanInitializers::CommandBufferSubmitInfo(commandBuffer);
+		VkSubmitInfo2 submitInfo = VulkanInitializers::SubmitInfo(&commandInfo, nullptr, nullptr);
+
+		// TODO: Allow immediate submit on other queues than the graphics queue.
+		VK_CHECK(vkQueueSubmit2(graphicsQueue, 1, &submitInfo, immediateFence));
+		VK_CHECK(vkWaitForFences(device, 1, &immediateFence, true, 9999999999));
 	}
 
 #ifndef PIXEY_SHIPPING
@@ -325,10 +348,22 @@ namespace Pixey
 			VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &frames[i].commandPool));
 
 			// Allocate the default command buffer that we will use for rendering.
-			VkCommandBufferAllocateInfo cmdAllocInfo = VulkanInitializers::CommandBufferAllocateInfo(frames[i].commandPool, 1);
+			VkCommandBufferAllocateInfo allocInfo = VulkanInitializers::CommandBufferAllocateInfo(frames[i].commandPool, 1);
 
-			VK_CHECK(vkAllocateCommandBuffers(device, &cmdAllocInfo, &frames[i].mainCommandBuffer));
+			VK_CHECK(vkAllocateCommandBuffers(device, &allocInfo, &frames[i].mainCommandBuffer));
 		}
+
+		VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &immediateCommandPool));
+
+		// Allocate the command buffer for immediate submits.
+		VkCommandBufferAllocateInfo immediateAllocInfo = VulkanInitializers::CommandBufferAllocateInfo(immediateCommandPool, 1);
+
+		VK_CHECK(vkAllocateCommandBuffers(device, &immediateAllocInfo, &immediateCommandBuffer));
+
+		deletionQueue.PushFunction([=]()
+		{
+			vkDestroyCommandPool(device, immediateCommandPool, nullptr);
+		});
 	}
 
 	void VulkanRenderer::InitSyncStructures()
@@ -344,6 +379,9 @@ namespace Pixey
 
 			VK_CHECK(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &frames[i].swapchainSemaphore));
 		}
+
+		VK_CHECK(vkCreateFence(device, &fenceCreateInfo, nullptr, &immediateFence));
+		deletionQueue.PushFunction([=]() { vkDestroyFence(device, immediateFence, nullptr); });
 	}
 
 	void VulkanRenderer::InitDescriptors()
@@ -388,6 +426,11 @@ namespace Pixey
 
 			vkDestroyDescriptorSetLayout(device, drawImageDescriptorLayout, nullptr);
 		});
+	}
+
+	void VulkanRenderer::InitImgui()
+	{
+
 	}
 
 	void VulkanRenderer::InitPipelines()

@@ -70,6 +70,7 @@ namespace Pixey
 		void InitDescriptors();
 		void InitPipelines();
 		void InitBackgroundPipelines();
+		void InitImgui();
 		VkPipeline BuildGradientPipeline(const uint8_t* spirvCode, size_t spirvSize);
 
 		// Swapchain
@@ -79,6 +80,7 @@ namespace Pixey
 		FrameData& GetCurrentFrame() { return frames[frameNumber % FRAME_OVERLAP]; };
 
 		void DrawBackground(VkCommandBuffer commandBuffer);
+		void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
 
 #ifndef PIXEY_SHIPPING
 		std::vector<uint32_t> CompileShaderFromSource(const std::filesystem::path& sourcePath, shaderc_shader_kind kind);
@@ -131,5 +133,10 @@ namespace Pixey
 #ifndef PIXEY_SHIPPING
 		std::filesystem::file_time_type gradientShaderLastWriteTime{};
 #endif
+
+	    // Immediate submit structures
+		VkFence immediateFence;
+		VkCommandBuffer immediateCommandBuffer;
+		VkCommandPool immediateCommandPool;
 	};
 }
