@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Pixey/PixeyExport.h"
 #include "Pixey/Window.h"
 
 #include <SDL3/SDL.h>
@@ -12,18 +13,18 @@ namespace Pixey
 	class WindowManager
 	{
 	public:
-		static WindowManager& Get();
+		PIXEY_API static WindowManager& Get();
 
 		WindowManager(const WindowManager&) = delete;
 		WindowManager& operator=(const WindowManager&) = delete;
 
-		void Initialize();
-		void Shutdown();
+		PIXEY_API void Initialize();
+		PIXEY_API void Shutdown();
 
-		Window& OpenWindow(const char* title, int width, int height);
+		PIXEY_API Window& OpenWindow(const char* title, int width, int height);
 
-		void HandleEvent(const SDL_Event& event);
-		bool AreAllWindowsMinimized() const;
+		PIXEY_API void HandleEvent(const SDL_Event& event);
+		PIXEY_API bool AreAllWindowsMinimized() const;
 
 	private:
 		WindowManager() = default;

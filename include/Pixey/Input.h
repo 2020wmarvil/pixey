@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Pixey/PixeyExport.h"
 #include "Pixey/Types.h"
 
 #include <SDL3/SDL.h>
@@ -9,23 +10,23 @@ namespace Pixey
 	class Input
 	{
 	public:
-		static Input& Get();
+		PIXEY_API static Input& Get();
 
 		Input(const Input&) = delete;
 		Input& operator=(const Input&) = delete;
 
-		void Update();
+		PIXEY_API void Update();
 
-		bool IsKeyDown(SDL_Scancode scancode) const;
-		bool IsKeyPressed(SDL_Scancode scancode) const;
-		bool IsKeyReleased(SDL_Scancode scancode) const;
+		PIXEY_API bool IsKeyDown(SDL_Scancode scancode) const;
+		PIXEY_API bool IsKeyPressed(SDL_Scancode scancode) const;
+		PIXEY_API bool IsKeyReleased(SDL_Scancode scancode) const;
 
-		Vec2 GetMousePosition() const;
-		Vec2 GetMouseDelta() const;
+		PIXEY_API Vec2 GetMousePosition() const;
+		PIXEY_API Vec2 GetMouseDelta() const;
 
-		bool IsMouseButtonDown(SDL_MouseButtonFlags buttonMask) const;
-		bool IsMouseButtonPressed(SDL_MouseButtonFlags buttonMask) const;
-		bool IsMouseButtonReleased(SDL_MouseButtonFlags buttonMask) const;
+		PIXEY_API bool IsMouseButtonDown(SDL_MouseButtonFlags buttonMask) const;
+		PIXEY_API bool IsMouseButtonPressed(SDL_MouseButtonFlags buttonMask) const;
+		PIXEY_API bool IsMouseButtonReleased(SDL_MouseButtonFlags buttonMask) const;
 
 	private:
 		Input() = default;

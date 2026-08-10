@@ -56,22 +56,24 @@ add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE deps/stb)
 
-# ---- Pixey static library --------------------------------------------------
+# ---- Pixey dynamic library --------------------------------------------------
 # src/ is globbed (CONFIGURE_DEPENDS) so new .h/.cpp files build without
 # touching this file. include/Pixey stays explicit -- it's the small,
-# stable public API surface.
+# stable public API surface, and PIXEY_API (PixeyExport.h) marks exactly what
+# of it crosses the DLL boundary.
 file(GLOB_RECURSE PIXEY_SOURCES CONFIGURE_DEPENDS
 	src/*.h
 	src/*.cpp
 )
 
-add_library(pixey STATIC
+add_library(pixey SHARED
 	${PIXEY_SOURCES}
 	include/Pixey/App.h
 	include/Pixey/EntryPoint.h
 	include/Pixey/Input.h
 	include/Pixey/Log.h
 	include/Pixey/Pixey.h
+	include/Pixey/PixeyExport.h
 	include/Pixey/Types.h
 	include/Pixey/Window.h
 	include/Pixey/WindowManager.h
@@ -83,6 +85,8 @@ target_include_directories(pixey
 	PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
+target_compile_definitions(pixey PRIVATE PIXEY_EXPORTS)
 
 target_compile_features(pixey PUBLIC cxx_std_20)
 set_target_properties(pixey PROPERTIES

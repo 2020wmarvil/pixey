@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Pixey/PixeyExport.h"
+
 #include <format>
 #include <string_view>
 #include <utility>
@@ -13,7 +15,7 @@ namespace Pixey::Log
 		Error,
 	};
 
-	void Write(Level level, std::string_view message);
+	PIXEY_API void Write(Level level, std::string_view message);
 
 	template<typename... Args>
 	void Info(std::format_string<Args...> fmt, Args&&... args)

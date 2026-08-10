@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Pixey/PixeyExport.h"
+
 namespace Pixey
 {
 	class App
@@ -20,5 +22,5 @@ namespace Pixey
 		bool bWantsToQuit = false;
 	};
 
-	int RunApp(App& inApp, int argc, char* argv[]);
+	PIXEY_API int RunApp(App& inApp, int argc, char* argv[]);
 }
