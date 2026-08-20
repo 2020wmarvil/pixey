@@ -3,6 +3,7 @@
 #include "Pixey/Input.h"
 #include "Pixey/Log.h"
 #include "Pixey/WindowManager.h"
+#include "UserInterface.h"
 #include "Vulkan/VulkanRenderer.h"
 
 #include <SDL3/SDL.h>
@@ -16,10 +17,10 @@ namespace Pixey
 
 		WindowManager& windowManager = WindowManager::Get();
 		windowManager.Initialize();
-
-		Input& input = Input::Get();
 		inApp.OnInit();
 
+		Input& input = Input::Get();
+		UserInterface& userInterface = UserInterface::Get();
 		VulkanRenderer& renderer = VulkanRenderer::Get();
 
 		bool bQuit = false;
@@ -30,6 +31,8 @@ namespace Pixey
 			SDL_Event e;
 			while (SDL_PollEvent(&e) != 0)
 			{
+				userInterface.ProcessEvent(e);
+
 				if (e.type == SDL_EVENT_QUIT)
 				{
 					bQuit = true;
@@ -51,6 +54,7 @@ namespace Pixey
 			const float deltaTime = static_cast<float>(currentTicks - lastTicks) / 1000.0f;
 			lastTicks = currentTicks;
 
+			userInterface.NewFrame();
 			inApp.OnFrame(deltaTime);
 			renderer.Draw();
 

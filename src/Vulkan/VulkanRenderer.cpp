@@ -5,21 +5,20 @@
 
 #include "VkBootstrap.h"
 #define VMA_IMPLEMENTATION
+#include "Pixey/Input.h"
+#include "Pixey/Log.h"
+#include "Pixey/Shaders/EmbeddedShaders.h"
 #include "Pixey/Window.h"
 
 #include <cassert>
 #include <cmath>
 
+#include "UserInterface.h"
 #include "vk_mem_alloc.h"
 #include "VulkanImages.h"
 #include "VulkanInitializers.h"
 #include "VulkanPipelines.h"
 #include "VulkanTypes.h"
-
-#include "Pixey/Input.h"
-#include "Pixey/Log.h"
-
-#include "Pixey/Shaders/EmbeddedShaders.h"
 
 #ifndef PIXEY_SHIPPING
 #include <filesystem>
@@ -146,8 +145,12 @@ namespace Pixey
 		// Execute a copy from the draw image into the swapchain.
 		VulkanUtils::CopyImageToImage(commandBuffer, drawImage.image, swapchainImages[swapchainImageIndex], drawExtent, swapchainExtent);
 
+		// Draw imgui directly into the swapchain image.
+		VulkanUtils::TransitionImage(commandBuffer, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		UserInterface::Get().Render(commandBuffer, swapchainImageViews[swapchainImageIndex], swapchainExtent);
+
 		// Set swapchain image layout to Present so we can show it on the screen.
-		VulkanUtils::TransitionImage(commandBuffer, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		VulkanUtils::TransitionImage(commandBuffer, swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 		// Finish recording the command buffer.
 		VK_CHECK(vkEndCommandBuffer(commandBuffer));
@@ -430,7 +433,9 @@ namespace Pixey
 
 	void VulkanRenderer::InitImgui()
 	{
+		UserInterface::Get().Init(instance, chosenGPU, device, graphicsQueueFamily, graphicsQueue, swapchainImageFormat, *window);
 
+		deletionQueue.PushFunction([]() { UserInterface::Get().Shutdown(); });
 	}
 
 	void VulkanRenderer::InitPipelines()
